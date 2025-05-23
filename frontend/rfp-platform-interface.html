@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFP Response Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .auth-section {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .auth-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .auth-option {
+            padding: 2rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .auth-option:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+
+        .auth-option.selected {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .api-key-display {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .api-key-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            word-break: break-all;
+        }
+
+        .warning-text {
+            color: #d97706;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            font-size: 1.1rem;
+            padding: 1rem 2rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            width: auto;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            background-color: #f8fafc;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover {
+            border-color: #3b82f6;
+            background-color: #f0f9ff;
+        }
+
+        .upload-zone.dragover {
+            border-color: #3b82f6;
+            background-color: #dbeafe;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            color: #64748b;
+        }
+
+        .uploaded-files {
+            margin-top: 1.5rem;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background-color: #f1f5f9;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .file-status {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        .status-pending {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .status-processing {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-processed {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-failed {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .rfp-upload {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .analyze-panel {
+            background-color: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .qa-container {
+            margin-top: 1rem;
+        }
+
+        .qa-item {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .question {
+            background-color: #1e293b;
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .question-status {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .answer-container {
+            padding: 1.5rem;
+        }
+
+        .answer-editor {
+            width: 100%;
+            min-height: 120px;
+            padding: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .answer-editor:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .answer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .confidence-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .confidence-high {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .confidence-medium {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .confidence-low {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .source-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .source-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .source-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-sources {
+            background: none;
+            border: 1px solid #d1d5db;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: #6b7280;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-sources:hover {
+            background-color: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .source-documents {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .source-doc {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .source-doc:hover {
+            border-color: #cbd5e1;
+            background-color: #f1f5f9;
+        }
+
+        .source-doc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .source-doc-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .source-doc-icon {
+            width: 16px;
+            height: 16px;
+            color: #6b7280;
+        }
+
+        .relevance-score {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .relevance-high {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .relevance-medium {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .source-hidden {
+            display: none;
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .error-message {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            border: 1px solid #fca5a5;
+        }
+
+        .success-message {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            border: 1px solid #86efac;
+        }
+
+        .copy-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .copy-button:hover {
+            background: #2563eb;
+        }
+
+        .extraction-score {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #f0f9ff;
+            border-radius: 6px;
+            border: 1px solid #0ea5e9;
+        }
+
+        .score-value {
+            font-weight: 600;
+            color: #0284c7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>RFP Response Platform</h1>
+            <p>Intelligent automation for RFP questionnaire responses</p>
+        </div>
+
+        <!-- Authentication Section -->
+        <div class="section auth-section" id="authSection">
+            <h2 class="section-title">Welcome to RFP Platform</h2>
+            
+            <div class="auth-options">
+                <div class="auth-option" id="newCompanyOption">
+                    <h3>New Company</h3>
+                    <p>Register your company and get started</p>
+                </div>
+                <div class="auth-option" id="existingCompanyOption">
+                    <h3>Existing Company</h3>
+                    <p>Login with your company credentials</p>
+                </div>
+            </div>
+
+            <!-- New Company Form -->
+            <div class="auth-form" id="newCompanyForm">
+                <div class="form-group">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" class="form-input" id="newCompanyName" placeholder="Enter your company name">
+                </div>
+                <button class="btn" id="registerCompanyBtn">Register Company</button>
+                
+                <div id="apiKeyDisplay" class="api-key-display hidden">
+                    <p class="warning-text">⚠️ IMPORTANT: This is your API Key - copy it now!</p>
+                    <div class="api-key-value" id="apiKeyValue"></div>
+                    <button class="copy-button" id="copyApiKey">Copy API Key</button>
+                    <p class="warning-text">Save this key securely. You'll need it to access your account.</p>
+                    <button class="btn btn-secondary" id="continueBtn" style="margin-top: 1rem;">Continue to Platform</button>
+                </div>
+            </div>
+
+            <!-- Existing Company Form -->
+            <div class="auth-form" id="existingCompanyForm">
+                <div class="form-group">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" class="form-input" id="existingCompanyName" placeholder="Enter your company name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">API Key</label>
+                    <input type="password" class="form-input" id="existingApiKey" placeholder="Enter your API key">
+                </div>
+                <button class="btn" id="loginCompanyBtn">Login</button>
+            </div>
+
+            <div id="authMessage"></div>
+        </div>
+
+        <!-- Main Platform (hidden until authenticated) -->
+        <div id="mainPlatform" class="hidden">
+            
+            <!-- Company Info Bar -->
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 id="companyNameDisplay"></h3>
+                        <p style="color: #6b7280; font-size: 0.875rem;">Company Dashboard</p>
+                    </div>
+                    <button class="btn btn-secondary btn-small" id="logoutBtn">Logout</button>
+                </div>
+            </div>
+
+            <!-- Section 1: Company Documents -->
+            <div class="section">
+                <h2 class="section-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    </svg>
+                    Company Documents
+                </h2>
+                <div class="upload-zone" id="companyUpload">
+                    <svg class="upload-icon" viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    </svg>
+                    <h3>Upload Company Documents</h3>
+                    <p>Drag and drop your company documents here, or click to browse</p>
+                    <p style="font-size: 0.875rem; color: #64748b; margin-top: 0.5rem;">
+                        Supported formats: PDF, Word, Excel (Max 10MB per file)
+                    </p>
+                    <input type="file" id="companyFiles" multiple accept=".pdf,.doc,.docx,.xls,.xlsx" style="display: none;">
+                </div>
+                
+                <div class="uploaded-files" id="companyFilesList">
+                    <!-- Documents will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Section 2: RFP Document Upload -->
+            <div class="section">
+                <h2 class="section-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,19H5V5H19V19Z"/>
+                    </svg>
+                    RFP Document Analysis
+                </h2>
+                
+                <div class="rfp-upload">
+                    <div class="upload-zone" id="rfpUpload">
+                        <svg class="upload-icon" viewBox="0 0 24 24">
+                            <path d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"/>
+                        </svg>
+                        <h3>Upload RFP Document</h3>
+                        <p>Upload the RFP questionnaire to analyze and extract questions</p>
+                        <input type="file" id="rfpFile" accept=".pdf,.doc,.docx" style="display: none;">
+                    </div>
+                    
+                    <div class="analyze-panel">
+                        <h3 style="margin-bottom: 1rem;">Analysis Options</h3>
+                        <p style="margin-bottom: 1.5rem; color: #64748b;">
+                            Upload an RFP document to automatically extract questions and generate responses.
+                        </p>
+                        <button class="btn" id="analyzeBtn" disabled>
+                            <svg style="width: 20px; height: 20px; margin-right: 0.5rem;" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M16.2,16.2L11,13V7H12.5V12.2L17,14.9L16.2,16.2Z"/>
+                            </svg>
+                            Analyze RFP Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <h3>Analyzing RFP Document...</h3>
+                <p>Extracting questions and generating intelligent responses</p>
+            </div>
+
+            <!-- Section 3: Questions and Answers -->
+            <div class="section hidden" id="qaSection">
+                <h2 class="section-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M21,6V8H3V6H21M3,18H12V16H3V18M3,13H21V11H3V13Z"/>
+                    </svg>
+                    RFP Questions & Generated Responses
+                </h2>
+                
+                <div id="extractionScoreDisplay" class="extraction-score hidden">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+                    </svg>
+                    <span>Question Extraction Score: <span class="score-value" id="extractionScore">--</span>%</span>
+                </div>
+                
+                <div class="qa-container" id="questionsContainer">
+                    <!-- Questions will be loaded here -->
+                </div>
+
+                <div class="download-section" id="downloadSection" style="display: none;">
+                    <h3 style="margin-bottom: 1rem;">Ready to Submit?</h3>
+                    <p style="margin-bottom: 1.5rem; color: #64748b;">
+                        Review all responses above and download your complete RFP response package.
+                    </p>
+                    <button class="btn btn-download" id="generateReportBtn">
+                        <svg style="width: 20px; height: 20px; margin-right: 0.5rem;" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+                        </svg>
+                        Download Final Response Package
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        const state = {
+            company: null,
+            apiKey: null,
+            companyDocuments: [],
+            currentRfp: null,
+            questions: [],
+            pollingIntervals: new Set()
+        };
+
+        const API_BASE = 'https://ahmed.femtoid.com/api/v1';
+
+        // Utility functions
+        function showElement(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function hideElement(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showMessage(containerId, message, type = 'error') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="${type}-message">${message}</div>`;
+        }
+
+        function clearMessage(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        // API functions
+        async function apiCall(endpoint, options = {}) {
+            const url = `${API_BASE}${endpoint}`;
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (state.apiKey && state.company) {
+                headers['Authorization'] = `Bearer ${state.apiKey}`;
+            }
+
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ error: 'Network error' }));
+                throw new Error(error.error || `HTTP ${response.status}`);
+            }
+
+            return response.json();
+        }
+
+        // Authentication functions
+        async function registerCompany(companyName) {
+            try {
+                const response = await apiCall('/companies/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ companyName })
+                });
+
+                if (response.success) {
+                    state.company = response.data;
+                    state.apiKey = response.data.apiKey;
+                    
+                    document.getElementById('apiKeyValue').textContent = response.data.apiKey;
+                    showElement('apiKeyDisplay');
+                    
+                    return response.data;
+                }
+            } catch (error) {
+                if (error.message.includes('already exists')) {
+                    showMessage('authMessage', 'Company already exists. Please use "Existing Company" option.', 'error');
+                    // Switch to existing company form
+                    document.getElementById('existingCompanyOption').click();
+                    document.getElementById('existingCompanyName').value = companyName;
+                } else {
+                    showMessage('authMessage', error.message, 'error');
+                }
+            }
+        }
+
+        async function authenticateCompany(companyName, apiKey) {
+            try {
+                const response = await apiCall('/companies/authenticate', {
+                    method: 'POST',
+                    body: JSON.stringify({ companyName, apiKey })
+                });
+
+                if (response.success) {
+                    state.company = response.data;
+                    state.apiKey = apiKey;
+                    return response.data;
+                }
+            } catch (error) {
+                showMessage('authMessage', error.message, 'error');
+                return null;
+            }
+        }
+
+        async function loadCompanyDocuments() {
+            try {
+                const response = await apiCall(`/companies/${state.company.companyId}/documents`);
+                if (response.success) {
+                    state.companyDocuments = response.data.documents;
+                    renderCompanyDocuments();
+                }
+            } catch (error) {
+                console.error('Failed to load documents:', error);
+            }
+        }
+
+        // Document management functions
+        function renderCompanyDocuments() {
+            const container = document.getElementById('companyFilesList');
+            container.innerHTML = '';
+
+            state.companyDocuments.forEach(doc => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        <span>${doc.filename}</span>
+                    </div>
+                    <div>
+                        <span class="file-status status-${doc.status.toLowerCase()}">${doc.status}</span>
+                        ${doc.status === 'COMPLETED' ? 
+                            `<button class="btn btn-danger btn-small" onclick="deleteDocument('${doc.docId}')">Delete</button>` :
+                            doc.status === 'PENDING' ? 
+                            `<button class="btn btn-small" onclick="processDocument('${doc.docId}')">Process</button>` : 
+                            ''
+                        }
+                    </div>
+                `;
+                container.appendChild(fileItem);
+            });
+        }
+
+        async function uploadCompanyDocument(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await apiCall(`/companies/${state.company.companyId}/documents`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${state.apiKey}`
+                    },
+                    body: formData
+                });
+
+                if (response.success) {
+                    // Add to local state
+                    const newDoc = {
+                        docId: response.data.docId,
+                        filename: response.data.filename,
+                        status: 'PENDING',
+                        uploadDate: new Date().toISOString()
+                    };
+                    state.companyDocuments.push(newDoc);
+                    renderCompanyDocuments();
+                }
+            } catch (error) {
+                showMessage('authMessage', `Failed to upload ${file.name}: ${error.message}`, 'error');
+            }
+        }
+
+        async function processDocument(docId) {
+            try {
+                // Update UI to show processing
+                const doc = state.companyDocuments.find(d => d.docId === docId);
+                if (doc) {
+                    doc.status = 'PROCESSING';
+                    renderCompanyDocuments();
+                }
+
+                // Start polling for status
+                pollDocumentStatus(docId);
+
+            } catch (error) {
+                console.error('Failed to process document:', error);
+            }
+        }
+
+        function pollDocumentStatus(docId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await apiCall(`/companies/${state.company.companyId}/documents/${docId}/status`);
+                    if (response.success) {
+                        const doc = state.companyDocuments.find(d => d.docId === docId);
+                        if (doc) {
+                            doc.status = response.data.status;
+                            renderCompanyDocuments();
+
+                            if (response.data.status === 'COMPLETED' || response.data.status === 'FAILED') {
+                                clearInterval(interval);
+                                state.pollingIntervals.delete(interval);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    clearInterval(interval);
+                    state.pollingIntervals.delete(interval);
+                }
+            }, 2000);
+
+            state.pollingIntervals.add(interval);
+        }
+
+        async function deleteDocument(docId) {
+            if (confirm('Are you sure you want to delete this document?')) {
+                try {
+                    await apiCall(`/companies/${state.company.companyId}/documents/${docId}`, {
+                        method: 'DELETE'
+                    });
+
+                    // Remove from local state
+                    state.companyDocuments = state.companyDocuments.filter(d => d.docId !== docId);
+                    renderCompanyDocuments();
+                } catch (error) {
+                    showMessage('authMessage', `Failed to delete document: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // RFP processing functions
+        async function uploadRfpDocument(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await apiCall(`/companies/${state.company.companyId}/rfp/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${state.apiKey}`
+                    },
+                    body: formData
+                });
+
+                if (response.success) {
+                    state.currentRfp = {
+                        rfpId: response.data.rfpId,
+                        filename: response.data.filename,
+                        status: 'PENDING'
+                    };
+
+                    showElement('loadingState');
+                    pollRfpStatus();
+                }
+            } catch (error) {
+                showMessage('authMessage', `Failed to upload RFP: ${error.message}`, 'error');
+            }
+        }
+
+        function pollRfpStatus() {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await apiCall(`/companies/${state.company.companyId}/rfp/${state.currentRfp.rfpId}/status`);
+                    if (response.success) {
+                        const data = response.data;
+                        
+                        if (data.status === 'COMPLETED') {
+                            clearInterval(interval);
+                            state.pollingIntervals.delete(interval);
+                            
+                            hideElement('loadingState');
+                            showElement('qaSection');
+                            
+                            // Update extraction score
+                            if (data.extractionScore) {
+                                document.getElementById('extractionScore').textContent = data.extractionScore.toFixed(1);
+                                showElement('extractionScoreDisplay');
+                            }
+                            
+                            // Load questions
+                            state.questions = data.questions || [];
+                            renderQuestions();
+                            
+                        } else if (data.status === 'FAILED') {
+                            clearInterval(interval);
+                            state.pollingIntervals.delete(interval);
+                            hideElement('loadingState');
+                            showMessage('authMessage', 'RFP analysis failed. Please try again.', 'error');
+                        }
+                        
+                        // Continue polling if still processing
+                    }
+                } catch (error) {
+                    console.error('RFP polling error:', error);
+                    clearInterval(interval);
+                    state.pollingIntervals.delete(interval);
+                    hideElement('loadingState');
+                    showMessage('authMessage', 'Error during RFP analysis.', 'error');
+                }
+            }, 3000);
+
+            state.pollingIntervals.add(interval);
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            let allAnswered = true;
+
+            state.questions.forEach((question, index) => {
+                if (question.status !== 'ANSWERED') {
+                    allAnswered = false;
+                }
+
+                const qaItem = document.createElement('div');
+                qaItem.className = 'qa-item';
+                qaItem.innerHTML = `
+                    <div class="question">
+                        <span>Q${question.questionNumber}: ${question.questionText}</span>
+                        <span class="question-status">${question.status}</span>
+                    </div>
+                    <div class="answer-container">
+                        <textarea class="answer-editor" id="answer-${question.questionId}" ${question.status !== 'ANSWERED' ? 'disabled' : ''}>${question.answer || 'Processing...'}</textarea>
+                        <div class="answer-actions">
+                            <span class="confidence-badge ${getConfidenceClass(question.confidenceScore)}">
+                                ${question.confidenceScore ? `${getConfidenceLabel(question.confidenceScore)} (${question.confidenceScore.toFixed(1)}%)` : 'Processing...'}
+                            </span>
+                            <button class="btn btn-success btn-small" onclick="updateAnswer('${question.questionId}')" ${question.status !== 'ANSWERED' ? 'disabled' : ''}>Save Changes</button>
+                        </div>
+                        
+                        ${question.matchedDocuments && question.matchedDocuments.length > 0 ? `
+                        <div class="source-section">
+                            <div class="source-header">
+                                <div class="source-title">
+                                    <svg class="icon" viewBox="0 0 24 24">
+                                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                                    </svg>
+                                    Source Documents (${question.matchedDocuments.length} matched)
+                                </div>
+                                <button class="toggle-sources" onclick="toggleSources(this)">Show</button>
+                            </div>
+                            <div class="source-documents source-hidden">
+                                ${question.matchedDocuments.map(doc => `
+                                    <div class="source-doc">
+                                        <div class="source-doc-header">
+                                            <div class="source-doc-name">
+                                                <svg class="source-doc-icon" viewBox="0 0 24 24">
+                                                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                                                </svg>
+                                                ${doc.filename}
+                                            </div>
+                                            <span class="relevance-score ${getRelevanceClass(doc.relevanceScore)}">${doc.relevanceScore.toFixed(0)}% match</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(qaItem);
+            });
+
+            // Show download section if all questions are answered
+            if (allAnswered && state.questions.length > 0) {
+                document.getElementById('downloadSection').style.display = 'block';
+            }
+
+            // Continue polling if not all questions are answered
+            if (!allAnswered) {
+                pollQuestionStatus();
+            }
+        }
+
+        function pollQuestionStatus() {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await apiCall(`/companies/${state.company.companyId}/rfp/${state.currentRfp.rfpId}/status`);
+                    if (response.success) {
+                        state.questions = response.data.questions || [];
+                        renderQuestions();
+                        
+                        // Stop polling if all questions are answered
+                        const allAnswered = state.questions.every(q => q.status === 'ANSWERED');
+                        if (allAnswered) {
+                            clearInterval(interval);
+                            state.pollingIntervals.delete(interval);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Question polling error:', error);
+                }
+            }, 5000);
+
+            state.pollingIntervals.add(interval);
+        }
+
+        async function updateAnswer(questionId) {
+            try {
+                const textarea = document.getElementById(`answer-${questionId}`);
+                const answer = textarea.value;
+
+                const response = await apiCall(`/companies/${state.company.companyId}/rfp/${state.currentRfp.rfpId}/questions/${questionId}/answer`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ answer })
+                });
+
+                if (response.success) {
+                    showMessage('authMessage', 'Answer updated successfully!', 'success');
+                    setTimeout(() => clearMessage('authMessage'), 3000);
+                }
+            } catch (error) {
+                showMessage('authMessage', `Failed to update answer: ${error.message}`, 'error');
+            }
+        }
+
+        async function generateReport() {
+            try {
+                const response = await apiCall(`/companies/${state.company.companyId}/rfp/${state.currentRfp.rfpId}/generate-report`, {
+                    method: 'POST'
+                });
+
+                if (response.success) {
+                    const resId = response.data.resId;
+                    
+                    // Disable button and show loading
+                    const btn = document.getElementById('generateReportBtn');
+                    btn.disabled = true;
+                    btn.innerHTML = `
+                        <div class="spinner" style="width: 20px; height: 20px; margin-right: 0.5rem;"></div>
+                        Generating Report...
+                    `;
+
+                    pollReportGeneration(resId);
+                }
+            } catch (error) {
+                showMessage('authMessage', `Failed to generate report: ${error.message}`, 'error');
+            }
+        }
+
+        function pollReportGeneration(resId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await apiCall(`/companies/${state.company.companyId}/reports/${resId}/status`);
+                    if (response.success) {
+                        const data = response.data;
+                        
+                        if (data.status === 'COMPLETED' && data.reportUrl) {
+                            clearInterval(interval);
+                            state.pollingIntervals.delete(interval);
+                            
+                            // Open report in new tab
+                            window.open(data.reportUrl, '_blank');
+                            
+                            // Reset button
+                            const btn = document.getElementById('generateReportBtn');
+                            btn.disabled = false;
+                            btn.innerHTML = `
+                                <svg style="width: 20px; height: 20px; margin-right: 0.5rem;" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+                                </svg>
+                                Download Final Response Package
+                            `;
+                            
+                            showMessage('authMessage', 'Report generated successfully!', 'success');
+                            
+                        } else if (data.status === 'FAILED') {
+                            clearInterval(interval);
+                            state.pollingIntervals.delete(interval);
+                            showMessage('authMessage', 'Report generation failed. Please try again.', 'error');
+                            
+                            // Reset button
+                            const btn = document.getElementById('generateReportBtn');
+                            btn.disabled = false;
+                            btn.innerHTML = `
+                                <svg style="width: 20px; height: 20px; margin-right: 0.5rem;" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+                                </svg>
+                                Download Final Response Package
+                            `;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Report polling error:', error);
+                    clearInterval(interval);
+                    state.pollingIntervals.delete(interval);
+                }
+            }, 3000);
+
+            state.pollingIntervals.add(interval);
+        }
+
+        // Utility functions for UI
+        function getConfidenceClass(score) {
+            if (score >= 85) return 'confidence-high';
+            if (score >= 70) return 'confidence-medium';
+            return 'confidence-low';
+        }
+
+        function getConfidenceLabel(score) {
+            if (score >= 85) return 'High Confidence';
+            if (score >= 70) return 'Medium Confidence';
+            return 'Low Confidence';
+        }
+
+        function getRelevanceClass(score) {
+            if (score >= 85) return 'relevance-high';
+            return 'relevance-medium';
+        }
+
+        function toggleSources(button) {
+            const sourceDocs = button.parentElement.nextElementSibling;
+            const isHidden = sourceDocs.classList.contains('source-hidden');
+            
+            if (isHidden) {
+                sourceDocs.classList.remove('source-hidden');
+                button.textContent = 'Hide';
+            } else {
+                sourceDocs.classList.add('source-hidden');
+                button.textContent = 'Show';
+            }
+        }
+
+        function enterMainPlatform() {
+            hideElement('authSection');
+            showElement('mainPlatform');
+            document.getElementById('companyNameDisplay').textContent = state.company.companyName;
+            
+            // Load existing documents
+            loadCompanyDocuments();
+        }
+
+        function logout() {
+            // Clear all polling intervals
+            state.pollingIntervals.forEach(interval => clearInterval(interval));
+            state.pollingIntervals.clear();
+            
+            // Reset state
+            state.company = null;
+            state.apiKey = null;
+            state.companyDocuments = [];
+            state.currentRfp = null;
+            state.questions = [];
+            
+            // Reset UI
+            hideElement('mainPlatform');
+            hideElement('qaSection');
+            hideElement('loadingState');
+            showElement('authSection');
+            
+            // Clear forms
+            document.getElementById('newCompanyName').value = '';
+            document.getElementById('existingCompanyName').value = '';
+            document.getElementById('existingApiKey').value = '';
+            hideElement('apiKeyDisplay');
+            clearMessage('authMessage');
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Authentication option selection
+            document.getElementById('newCompanyOption').addEventListener('click', function() {
+                document.querySelectorAll('.auth-option').forEach(el => el.classList.remove('selected'));
+                this.classList.add('selected');
+                document.querySelectorAll('.auth-form').forEach(el => el.classList.remove('active'));
+                document.getElementById('newCompanyForm').classList.add('active');
+                clearMessage('authMessage');
+            });
+
+            document.getElementById('existingCompanyOption').addEventListener('click', function() {
+                document.querySelectorAll('.auth-option').forEach(el => el.classList.remove('selected'));
+                this.classList.add('selected');
+                document.querySelectorAll('.auth-form').forEach(el => el.classList.remove('active'));
+                document.getElementById('existingCompanyForm').classList.add('active');
+                clearMessage('authMessage');
+            });
+
+            // Company registration
+            document.getElementById('registerCompanyBtn').addEventListener('click', async function() {
+                const companyName = document.getElementById('newCompanyName').value.trim();
+                if (!companyName) {
+                    showMessage('authMessage', 'Please enter a company name', 'error');
+                    return;
+                }
+
+                this.disabled = true;
+                this.textContent = 'Registering...';
+                
+                await registerCompany(companyName);
+                
+                this.disabled = false;
+                this.textContent = 'Register Company';
+            });
+
+            // Company authentication
+            document.getElementById('loginCompanyBtn').addEventListener('click', async function() {
+                const companyName = document.getElementById('existingCompanyName').value.trim();
+                const apiKey = document.getElementById('existingApiKey').value.trim();
+                
+                if (!companyName || !apiKey) {
+                    showMessage('authMessage', 'Please enter both company name and API key', 'error');
+                    return;
+                }
+
+                this.disabled = true;
+                this.textContent = 'Authenticating...';
+                
+                const result = await authenticateCompany(companyName, apiKey);
+                if (result) {
+                    enterMainPlatform();
+                }
+                
+                this.disabled = false;
+                this.textContent = 'Login';
+            });
+
+            // Continue to platform after registration
+            document.getElementById('continueBtn').addEventListener('click', function() {
+                enterMainPlatform();
+            });
+
+            // Copy API key
+            document.getElementById('copyApiKey').addEventListener('click', function() {
+                const apiKey = document.getElementById('apiKeyValue').textContent;
+                navigator.clipboard.writeText(apiKey).then(() => {
+                    this.textContent = 'Copied!';
+                    setTimeout(() => this.textContent = 'Copy API Key', 2000);
+                });
+            });
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+
+            // Company document upload
+            const companyUpload = document.getElementById('companyUpload');
+            const companyFiles = document.getElementById('companyFiles');
+            
+            companyUpload.addEventListener('click', () => companyFiles.click());
+            
+            companyUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                companyUpload.classList.add('dragover');
+            });
+            
+            companyUpload.addEventListener('dragleave', () => {
+                companyUpload.classList.remove('dragover');
+            });
+            
+            companyUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                companyUpload.classList.remove('dragover');
+                Array.from(e.dataTransfer.files).forEach(uploadCompanyDocument);
+            });
+
+            companyFiles.addEventListener('change', (e) => {
+                Array.from(e.target.files).forEach(uploadCompanyDocument);
+                e.target.value = ''; // Reset file input
+            });
+
+            // RFP document upload
+            const rfpUpload = document.getElementById('rfpUpload');
+            const rfpFile = document.getElementById('rfpFile');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            rfpUpload.addEventListener('click', () => rfpFile.click());
+            
+            rfpFile.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerHTML = `
+                        <svg style="width: 20px; height: 20px; margin-right: 0.5rem;" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M16.2,16.2L11,13V7H12.5V12.2L17,14.9L16.2,16.2Z"/>
+                        </svg>
+                        Analyze "${e.target.files[0].name}"
+                    `;
+                }
+            });
+
+            analyzeBtn.addEventListener('click', () => {
+                const file = rfpFile.files[0];
+                if (file) {
+                    uploadRfpDocument(file);
+                }
+            });
+
+            // Generate report
+            document.getElementById('generateReportBtn').addEventListener('click', generateReport);
+        });
+
+        // Global functions for onclick handlers
+        window.processDocument = processDocument;
+        window.deleteDocument = deleteDocument;
+        window.updateAnswer = updateAnswer;
+        window.toggleSources = toggleSources;
+    </script>
+</body>
+</html>

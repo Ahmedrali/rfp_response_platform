@@ -1,0 +1,12 @@
+# Create this file manually in backend/.gitignore
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+.pytest_cache/
+htmlcov/
+.coverage
+uploads/
+*.db
+.DS_Store
