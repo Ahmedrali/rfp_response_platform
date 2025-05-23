@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     # Database settings
     # Example: postgresql+asyncpg://user:password@host:port/db_name
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/rfp_platform_db"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/rfp_platform"
 
     # CORS settings
     CORS_ORIGINS: Union[str, List[str]] = ["http://localhost:3000", "http://localhost:8080"] # Comma-separated string or list

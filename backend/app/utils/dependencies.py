@@ -1,5 +1,6 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 from app.utils.database import AsyncSessionLocal
 import structlog
 
@@ -23,3 +24,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     finally:
         await session.close()
         log.debug("Database session closed")
+
+
+# Typed dependency for easier usage
+DbSession = Annotated[AsyncSession, Depends(get_db_session)]

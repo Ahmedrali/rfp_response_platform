@@ -124,22 +124,21 @@ async def health_check():
 @app.on_event("startup")
 async def startup_event():
     log.info(f"Starting up {settings.PROJECT_NAME}...")
-    # You can add database connection checks or other startup logic here
-    # For example, trying to connect to the database:
-    # try:
-    #     from app.utils.database import async_engine
-    #     async with async_engine.connect() as connection:
-    #         log.info("Database connection successful on startup.")
-    # except Exception as e:
-    #     log.error("Database connection failed on startup.", error=str(e))
+    # Check database connection on startup
+    try:
+        from app.utils.database import async_engine
+        async with async_engine.connect() as connection:
+            log.info("Database connection successful on startup.")
+    except Exception as e:
+        log.error("Database connection failed on startup.", error=str(e))
 
 @app.on_event("shutdown")
 async def shutdown_event():
     log.info(f"Shutting down {settings.PROJECT_NAME}...")
-    # Add cleanup logic here if needed, e.g., closing database engine
-    # from app.utils.database import async_engine
-    # await async_engine.dispose()
-    # log.info("Database engine disposed.")
+    # Cleanup database connections
+    from app.utils.database import async_engine
+    await async_engine.dispose()
+    log.info("Database engine disposed.")
 
 if __name__ == "__main__":
     import uvicorn
