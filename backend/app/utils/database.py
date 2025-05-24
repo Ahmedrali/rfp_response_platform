@@ -8,6 +8,7 @@ async_engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.ECHO_SQL,
     pool_pre_ping=True,
+    connect_args={"server_settings": {"search_path": "public"}} # Ensure public schema is used for asyncpg
 )
 
 AsyncSessionLocal = async_sessionmaker(

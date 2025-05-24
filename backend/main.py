@@ -1,5 +1,6 @@
 import logging
 import sys
+from contextlib import asynccontextmanager
 import pydantic
 import structlog
 
@@ -49,11 +50,33 @@ def configure_logging(log_level: str):
 configure_logging(settings.LOG_LEVEL)
 log = structlog.get_logger(__name__)
 
+# --- Application Lifespan ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    log.info(f"Starting up {settings.PROJECT_NAME}...")
+    # Check database connection on startup
+    try:
+        from app.utils.database import async_engine # Import here to ensure config is loaded
+        async with async_engine.connect() as connection:
+            log.info("Database connection successful on startup.")
+    except Exception as e:
+        log.error("Database connection failed on startup.", error=str(e))
+    
+    yield # Application runs here
+    
+    # Shutdown logic
+    log.info(f"Shutting down {settings.PROJECT_NAME}...")
+    from app.utils.database import async_engine # Re-import or ensure it's in scope
+    await async_engine.dispose()
+    log.info("Database engine disposed.")
+
 # --- FastAPI Application Initialization ---
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    version="0.1.0" # You can make this dynamic if needed
+    version="0.1.0", # You can make this dynamic if needed
+    lifespan=lifespan
 )
 
 # --- CORS Middleware ---
@@ -119,26 +142,6 @@ async def health_check():
     """
     log.info("Health check endpoint called")
     return {"status": "healthy", "project_name": settings.PROJECT_NAME}
-
-# --- Application Lifecycle Events (Optional) ---
-@app.on_event("startup")
-async def startup_event():
-    log.info(f"Starting up {settings.PROJECT_NAME}...")
-    # Check database connection on startup
-    try:
-        from app.utils.database import async_engine
-        async with async_engine.connect() as connection:
-            log.info("Database connection successful on startup.")
-    except Exception as e:
-        log.error("Database connection failed on startup.", error=str(e))
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    log.info(f"Shutting down {settings.PROJECT_NAME}...")
-    # Cleanup database connections
-    from app.utils.database import async_engine
-    await async_engine.dispose()
-    log.info("Database engine disposed.")
 
 if __name__ == "__main__":
     import uvicorn

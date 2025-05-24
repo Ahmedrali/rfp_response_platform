@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "aiofiles==23.2.1",
     "alembic==1.13.1",
+    "asyncpg>=0.30.0",
     "bcrypt==4.1.2",
     "black==23.12.1",
     "celery[redis]==5.5.2",

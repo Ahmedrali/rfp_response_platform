@@ -8,6 +8,7 @@ passlib[bcrypt]==1.7.4
 # Database and ORM
 sqlalchemy==2.0.25
 alembic==1.13.1
+asyncpg
 psycopg2-binary==2.9.9
 
 # Background Tasks
