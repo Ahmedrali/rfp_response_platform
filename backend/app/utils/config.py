@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     # Example: postgresql+asyncpg://user:password@host:port/db_name
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/rfp_platform"
 
+    # Redis settings for Celery
+    REDIS_URL: str = "redis://localhost:6379/0"
+
     # CORS settings
     CORS_ORIGINS: Union[str, List[str]] = ["http://localhost:3000", "http://localhost:8080"] # Comma-separated string or list
 

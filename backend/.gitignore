@@ -1,12 +1,25 @@
-# Create this file manually in backend/.gitignore
+# Python files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Environment and local configuration
 .env
 venv/
 .pytest_cache/
 htmlcov/
 .coverage
+
+# User uploaded content
 uploads/
+
+# Databases
 *.db
+chroma_db/
+
+# System files
 .DS_Store
+
+# Celery
+celerybeat-schedule
+celerybeat.pid

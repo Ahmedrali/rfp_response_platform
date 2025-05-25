@@ -7,7 +7,7 @@ from typing import List, Optional
 from uuid import UUID
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, delete
 from sqlalchemy.orm import selectinload
 import structlog
 
@@ -104,10 +104,30 @@ class DocumentService:
                     filename=file.filename,
                     file_size=file_size)
             
+            # Automatically trigger document processing
+            log.info("Automatically triggering document processing",
+                    company_id=str(company_id),
+                    doc_id=doc_id,
+                    document_id=str(document.id))
+            
+            # Import here to avoid circular imports
+            from app.tasks.document_tasks import process_document
+            
+            # Update document status to PROCESSING
+            document.processing_status = ProcessingStatus.PROCESSING
+            document.processing_started_at = datetime.utcnow()
+            await self.db.commit()  # Commit the changes to the database
+            
+            # Send task to Celery
+            process_document.delay(
+                document_id=str(document.id),
+                company_id=str(company_id)
+            )
+            
             return DocumentUploadResponse(
                 docId=doc_id,
                 filename=document.filename,
-                status=ProcessingStatus.PENDING
+                status=ProcessingStatus.PROCESSING  # Return PROCESSING status instead of PENDING
             )
             
         except HTTPException:
@@ -322,4 +342,111 @@ class DocumentService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete document"
+            )
+    
+    async def process_document(
+        self,
+        company_id: UUID,
+        doc_id: str
+    ) -> DocumentStatusResponse:
+        """
+        Trigger background processing for a document using RAG.
+        
+        Args:
+            company_id: Company ID
+            doc_id: Document ID
+            
+        Returns:
+            Updated document status
+            
+        Raises:
+            HTTPException: If document not found or processing fails
+        """
+        try:
+            # Query for document
+            query = select(CompanyDocument).where(
+                and_(
+                    CompanyDocument.company_id == company_id,
+                    CompanyDocument.doc_id == doc_id
+                )
+            )
+            
+            result = await self.db.execute(query)
+            document = result.scalar_one_or_none()
+            
+            if not document:
+                log.warning("Document not found for processing",
+                           company_id=str(company_id),
+                           doc_id=doc_id)
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Document not found"
+                )
+            
+            # Check if document is already processed or processing
+            if document.processing_status == ProcessingStatus.PROCESSING:
+                log.info("Document already processing",
+                        company_id=str(company_id),
+                        doc_id=doc_id,
+                        status=document.processing_status)
+                
+                # Return current status
+                return await self.get_document_status(company_id, doc_id)
+            
+            # For re-processing, we need to clear any existing chunks
+            if document.processing_status in [ProcessingStatus.COMPLETED, ProcessingStatus.FAILED]:
+                log.info("Re-processing document - clearing existing chunks",
+                        company_id=str(company_id),
+                        doc_id=doc_id,
+                        current_chunk_count=document.chunk_count)
+                
+                # Delete existing chunks
+                delete_query = delete(DocumentChunk).where(
+                    DocumentChunk.document_id == document.id
+                )
+                await self.db.execute(delete_query)
+                
+                # Reset chunk count
+                document.chunk_count = 0
+                
+                # Clear any error message from previous processing
+                if document.error_message:
+                    document.error_message = None
+            
+            # Submit background task for processing
+            from app.tasks.document_tasks import process_document
+            
+            log.info("Triggering document processing task",
+                    company_id=str(company_id),
+                    doc_id=doc_id,
+                    document_id=str(document.id))
+            
+            # Send task to Celery
+            process_document.delay(
+                document_id=str(document.id),
+                company_id=str(company_id)
+            )
+            
+            # Update document status to PROCESSING
+            document.processing_status = ProcessingStatus.PROCESSING
+            document.processing_started_at = datetime.utcnow()
+            await self.db.commit()
+            
+            log.info("Document processing started",
+                    company_id=str(company_id),
+                    doc_id=doc_id)
+            
+            # Return updated status
+            return await self.get_document_status(company_id, doc_id)
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            log.error("Error triggering document processing",
+                     company_id=str(company_id),
+                     doc_id=doc_id,
+                     error=str(e))
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to process document"
             )

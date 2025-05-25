@@ -35,6 +35,12 @@ def get_session():
     finally:
         session.close()
 
+
+# Return the async session factory for Celery tasks
+def get_async_session_factory():
+    """Get the async session factory for Celery tasks"""
+    return AsyncSessionLocal
+
 # Dependency to get DB session (moved to dependencies.py for better structure)
 # async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 #     async with AsyncSessionLocal() as session:

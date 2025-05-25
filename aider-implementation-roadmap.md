@@ -326,31 +326,31 @@ curl -X DELETE http://localhost:8000/api/v1/companies/{company_id}/documents/{do
 
 ---
 
-## Step 5: Document Processing Pipeline with Placeholder AI
+## Step 5: Document Processing Pipeline with RAG AI Integration
 
 ### Aider Prompt:
 ```
-Create a document processing pipeline with placeholder DocumentProcessor utility class:
+Integrate the existing RAG-based DocumentProcessor with the document processing pipeline:
 
-DOCUMENTPROCESSOR INTERFACE (create placeholder implementation):
-Create app/services/document_processor.py with these exact methods:
+EXISTING RAG DOCUMENTPROCESSOR:
+Use the existing app/services/rag_document_processor.py which provides:
 
 1. index_document(file_content: str, db_identifier: str) -> List[str]
-   - Processes document by chunking and indexing 
+   - Processes document using LangGraph workflow with chunking and vector embeddings
+   - Stores chunks in ChromaDB with company isolation
    - Returns list of chunk IDs generated during indexing
-   - Simulate processing with 1-2 second delay
 
 2. extract_questions(file_content: str) -> ExtractionResult
-   - Extracts questions from document with confidence score
+   - Uses OpenAI/compatible LLM for intelligent question extraction
    - Returns ExtractionResult with questions list and confidence_score
-   - Use simple text parsing (lines ending with "?") plus fallback questions
+   - Leverages AI for accurate question identification
 
 3. answer_question(question: str, db_id: str) -> AnswerResult  
-   - Generates answer using template responses
+   - Generates answers using RAG (Retrieval-Augmented Generation)
+   - Retrieves relevant chunks from company-specific vector store
    - Returns AnswerResult with answer, chunk_ids, confidence_score
-   - Use keyword matching for realistic responses
 
-DATA STRUCTURES:
+DATA STRUCTURES (already defined in rag_document_processor.py):
 ```python
 @dataclasses.dataclass
 class ExtractionResult:
@@ -366,81 +366,115 @@ class AnswerResult:
 
 DOCUMENT PROCESSING PIPELINE:
 1. Text extraction from PDF/DOCX files (PyPDF2, python-docx)
-2. Text chunking with overlap (1000 chars, 200 overlap)
-3. Use DocumentProcessor.index_document() to generate chunk IDs
-4. Store chunks with returned chunk_ids in database
-5. Update document status throughout process
-6. Background task processing with Celery
-7. Status updates and error handling
+2. Use existing DocumentProcessor.index_document() with company-specific db_identifier
+3. Store chunks with returned chunk_ids in database
+4. Update document status throughout process
+5. Background task processing with Celery
+6. Status updates and error handling
+
+ENVIRONMENT SETUP REQUIREMENTS:
+- OpenAI API key or compatible endpoint (OPENAI_API_KEY, OPENAI_BASE_URL)
+- Embedding model configuration (EMBEDDING_MODEL, CHAT_MODEL)
+- ChromaDB vector store for persistent storage
 
 Create:
-- app/services/document_processor.py - Placeholder implementation with realistic responses
-- app/services/document_service.py - Uses DocumentProcessor for text processing
-- app/utils/text_chunker.py - Text chunking utility
-- app/tasks/document_tasks.py - Celery tasks for background processing
+- app/services/document_service.py - Uses existing RAG DocumentProcessor for text processing
+- app/tasks/document_tasks.py - Celery tasks for background processing with RAG integration
 - app/celery_app.py - Celery application configuration
 - Endpoint to trigger document processing
+- Environment variable configuration for AI models
 
-The placeholder allows full backend functionality while AI utility is developed separately.
+The system will use production-ready RAG capabilities with LangGraph workflows and ChromaDB vector storage.
 ```
 
 ### Expected Outcome:
-- Placeholder DocumentProcessor with exact interface
+- Integration with production RAG DocumentProcessor
 - Text extraction for PDF, Word, Excel files  
-- Document chunking with chunk ID generation
+- Document chunking with vector embeddings stored in ChromaDB
 - Celery integration for background processing
 - Status tracking with database updates
-- Foundation for future AI integration
+- AI-powered question extraction and answer generation
+- Company-isolated vector storage
 
 ### Validation Steps:
 ```bash
-# 1. Test DocumentProcessor placeholder
+# 1. Set up environment variables for RAG
+export OPENAI_API_KEY="your_openai_api_key"
+export OPENAI_BASE_URL="https://api.openai.com/v1"  # or your compatible endpoint
+export EMBEDDING_MODEL="text-embedding-ada-002"
+export CHAT_MODEL="gpt-3.5-turbo"
+
+# 2. Test RAG DocumentProcessor integration
 python -c "
-from app.services.document_processor import DocumentProcessor
+from app.services.rag_document_processor import DocumentProcessor
 processor = DocumentProcessor()
 
-# Test indexing
-chunks = processor.index_document('Sample content here?', 'company_123')
-print(f'Generated {len(chunks)} chunks: {chunks}')
+# Test indexing with real RAG
+chunks = processor.index_document('What are your security measures? How do you ensure quality control?', 'company_123')
+print(f'Generated {len(chunks)} chunks with IDs: {chunks}')
 
-# Test question extraction  
-result = processor.extract_questions('What is your methodology? How do you ensure quality?')
-print(f'Extracted {len(result.questions)} questions with {result.confidence_score:.2f} confidence')
+# Test AI question extraction  
+result = processor.extract_questions('What is your methodology? How do you ensure quality? What are your security measures?')
+print(f'AI extracted {len(result.questions)} questions with {result.confidence_score:.2f} confidence')
+print(f'Questions: {result.questions}')
 
-# Test answer generation
+# Test RAG answer generation
 answer = processor.answer_question('What are your security measures?', 'company_123')
-print(f'Answer: {answer.answer[:100]}... (confidence: {answer.confidence_score:.2f})')
+print(f'RAG Answer: {answer.answer[:100]}... (confidence: {answer.confidence_score:.2f})')
+print(f'Source chunks: {answer.chunk_ids}')
 "
 
-# 2. Start Redis and Celery
+# 3. Start Redis and Celery
 redis-cli ping
 celery -A app.celery_app worker --loglevel=info
 
-# 3. Trigger document processing
+# 4. Trigger document processing with RAG
 curl -X POST http://localhost:8000/api/v1/companies/{company_id}/documents/{doc_id}/process \
   -H "Authorization: Bearer {api_key}"
 
-# 4. Monitor processing status
+# 5. Monitor RAG processing status
 watch curl -X GET http://localhost:8000/api/v1/companies/{company_id}/documents/{doc_id}/status \
   -H "Authorization: Bearer {api_key}"
 
-# 5. Check chunks created in database
+# 6. Verify ChromaDB collections and chunks
 python -c "
-from app.models import DocumentChunk
-from app.utils.database import get_session
-session = next(get_session())
-chunks = session.query(DocumentChunk).count()
-print(f'Total chunks in database: {chunks}')
+import chromadb
+client = chromadb.PersistentClient(path='./chroma_db')
+collections = client.list_collections()
+print(f'ChromaDB collections: {[c.name for c in collections]}')
+
+if collections:
+    collection = collections[0]
+    count = collection.count()
+    print(f'Collection {collection.name} has {count} documents')
+"
+
+# 7. Test company isolation in vector store
+python -c "
+from app.services.rag_document_processor import DocumentProcessor
+processor = DocumentProcessor()
+
+# Index for two different companies
+chunks1 = processor.index_document('Company A security policies', 'company_a')
+chunks2 = processor.index_document('Company B security policies', 'company_b')
+
+# Test cross-company isolation
+answer_a = processor.answer_question('What are the security policies?', 'company_a')
+answer_b = processor.answer_question('What are the security policies?', 'company_b')
+
+print(f'Company A answer sources: {answer_a.chunk_ids}')
+print(f'Company B answer sources: {answer_b.chunk_ids}')
+print('Chunk IDs should be different, confirming isolation')
 "
 ```
 
 ---
 
-## Step 6: RFP Upload & Question Extraction with Placeholder AI
+## Step 6: RFP Upload & Question Extraction with RAG AI
 
 ### Aider Prompt:
 ```
-Implement RFP document upload and question extraction using DocumentProcessor placeholder:
+Implement RFP document upload and question extraction using existing RAG DocumentProcessor:
 
 POST /api/v1/companies/{company_id}/rfp/upload
 - Upload RFP document (PDF/DOCX)
@@ -452,41 +486,42 @@ GET /api/v1/companies/{company_id}/rfp/{rfp_id}/status
 - Return RFP processing status with extraction_score and questions array
 - Each question: {"questionId": "uuid", "questionNumber": int, "questionText": "string", "questionType": "string", "status": "ANSWERED", "answer": "string", "confidenceScore": float, "matchedDocuments": [array]}
 
-RFP PROCESSING PIPELINE using DocumentProcessor:
+RFP PROCESSING PIPELINE using RAG DocumentProcessor:
 1. Extract text from RFP document using existing text extraction
-2. Use DocumentProcessor.extract_questions(file_content) to get questions
+2. Use DocumentProcessor.extract_questions(file_content) for AI-powered question extraction
 3. For each extracted question:
    - Create ExtractedQuestion record in database
-   - Use DocumentProcessor.answer_question(question, company_id) to generate answer
-   - Create placeholder QuestionDocumentMatches with chunk_ids
-   - Set question status to "ANSWERED"
-4. Calculate overall extraction_score from DocumentProcessor result
+   - Use DocumentProcessor.answer_question(question, company_id) for RAG-based answers
+   - Create QuestionDocumentMatches with actual chunk_ids from vector store
+   - Set question status to "ANSWERED" with real confidence scores
+4. Use real extraction_score from DocumentProcessor result
 5. Update RFP status to "COMPLETED"
 
-QUESTION-DOCUMENT MATCHING (Placeholder):
+QUESTION-DOCUMENT MATCHING (RAG-powered):
 - Use chunk_ids returned from DocumentProcessor.answer_question()
-- Create QuestionDocumentMatch records linking questions to company documents
+- Create QuestionDocumentMatch records with actual vector similarity scores
 - Set relevance_score based on DocumentProcessor confidence_score
-- This provides realistic data structure for frontend
+- Real document chunks retrieved from ChromaDB vector store
+- Company-isolated matching using db_identifier
 
 Create:
 - app/routes/rfp.py - RFP endpoints
-- app/services/rfp_service.py - RFP processing logic using DocumentProcessor
-- app/tasks/rfp_tasks.py - Background RFP processing with Celery
-- Question extraction and answer generation using placeholder AI
+- app/services/rfp_service.py - RFP processing logic using RAG DocumentProcessor
+- app/tasks/rfp_tasks.py - Background RFP processing with Celery and RAG
+- AI-powered question extraction and answer generation
 - Status tracking for RFP processing
-- Realistic document matching for frontend integration
+- Real document matching with vector similarity scores
 
-The system will work fully with placeholder AI, providing proper data structures and workflow.
+The system will provide intelligent question extraction and accurate answers using production RAG capabilities.
 ```
 
 ### Expected Outcome:
 - RFP upload functionality
-- Question extraction using DocumentProcessor placeholder
-- Answer generation with confidence scoring
-- Question-document matching with chunk references
-- Complete RFP processing workflow
-- Foundation for AI integration
+- AI-powered question extraction using RAG DocumentProcessor
+- Intelligent answer generation with vector similarity matching
+- Real question-document matching with chunk references from ChromaDB
+- Complete RFP processing workflow with production AI capabilities
+- Company-isolated vector storage and retrieval
 
 ### Validation Steps:
 ```bash
@@ -495,44 +530,88 @@ curl -X POST http://localhost:8000/api/v1/companies/{company_id}/rfp/upload \
   -H "Authorization: Bearer {api_key}" \
   -F "file=@sample_rfp.pdf"
 
-# 2. Monitor RFP processing
+# 2. Monitor RFP processing with AI
 watch curl -X GET http://localhost:8000/api/v1/companies/{company_id}/rfp/{rfp_id}/status \
   -H "Authorization: Bearer {api_key}"
 
-# 3. Verify questions extracted with answers
+# 3. Verify AI-extracted questions with real answers
 curl -X GET http://localhost:8000/api/v1/companies/{company_id}/rfp/{rfp_id}/status \
   -H "Authorization: Bearer {api_key}" | jq '.data.questions[0]'
 
-# 4. Test DocumentProcessor integration
+# 4. Test RAG DocumentProcessor with RFP content
 python -c "
-from app.services.document_processor import DocumentProcessor
+from app.services.rag_document_processor import DocumentProcessor
 processor = DocumentProcessor()
 
 # Test with sample RFP content
 rfp_content = '''
-1. What are your company's main capabilities?
-2. How do you ensure data security?
-3. What is your project methodology?
+Request for Proposal: IT Services Contract
+
+Section 1: Company Overview
+Please provide detailed information about your company's experience and capabilities.
+
+Section 2: Technical Requirements
+1. What is your approach to data security and compliance?
+2. How do you ensure system reliability and uptime?
+3. What are your disaster recovery procedures?
+4. Describe your quality assurance methodology.
+
+Section 3: Project Management
+5. What project management framework do you use?
+6. How do you handle change requests and scope modifications?
 '''
 
+# AI-powered question extraction
 result = processor.extract_questions(rfp_content)
-print(f'Extracted: {result.questions}')
-print(f'Confidence: {result.confidence_score}')
+print(f'AI extracted {len(result.questions)} questions:')
+for i, question in enumerate(result.questions, 1):
+    print(f'{i}. {question}')
+print(f'Extraction confidence: {result.confidence_score:.2f}')
 
-# Test answer generation
-answer = processor.answer_question(result.questions[0], 'company_123')
-print(f'Answer: {answer.answer[:100]}...')
-print(f'Chunk IDs: {answer.chunk_ids}')
+# Test RAG answer generation for first question
+if result.questions:
+    answer = processor.answer_question(result.questions[0], 'company_123')
+    print(f'\\nRAG Answer for: {result.questions[0]}')
+    print(f'Answer: {answer.answer[:200]}...')
+    print(f'Source chunks: {answer.chunk_ids}')
+    print(f'Confidence: {answer.confidence_score:.2f}')
 "
 
-# 5. Verify database records created
+# 5. Verify real vector similarity matching
 python -c "
 from app.models import ExtractedQuestion, QuestionDocumentMatch
 from app.utils.database import get_session
 session = next(get_session())
-questions = session.query(ExtractedQuestion).count()
-matches = session.query(QuestionDocumentMatch).count()
-print(f'Questions: {questions}, Document matches: {matches}')
+
+questions = session.query(ExtractedQuestion).all()
+matches = session.query(QuestionDocumentMatch).all()
+
+print(f'Questions extracted: {len(questions)}')
+print(f'Document matches created: {len(matches)}')
+
+if matches:
+    match = matches[0]
+    print(f'Sample match relevance score: {match.relevance_score}')
+    print(f'Sample chunk IDs: {match.chunk_ids}')
+"
+
+# 6. Test company isolation in RFP processing
+python -c "
+from app.services.rag_document_processor import DocumentProcessor
+processor = DocumentProcessor()
+
+# Index documents for two companies
+processor.index_document('Company A has ISO 27001 certification', 'company_a')
+processor.index_document('Company B uses AWS security standards', 'company_b')
+
+# Test isolation in question answering
+question = 'What are your security certifications?'
+answer_a = processor.answer_question(question, 'company_a')
+answer_b = processor.answer_question(question, 'company_b')
+
+print(f'Company A answer: {answer_a.answer[:100]}...')
+print(f'Company B answer: {answer_b.answer[:100]}...')
+print('Answers should reference different security approaches')
 "
 ```
 
@@ -760,10 +839,12 @@ After completing all steps, you should have:
 ✅ **Complete database schema with migrations**  
 ✅ **Authentication and authorization system**
 ✅ **Document upload and processing pipeline**
-✅ **RFP analysis with basic question extraction**
+✅ **RAG-powered question extraction and answer generation**
+✅ **Production-ready AI integration with ChromaDB vector storage**
+✅ **Company-isolated document processing and retrieval**
 ✅ **Answer management system**
 ✅ **PDF report generation**
 ✅ **Background job processing with Celery**
 ✅ **Comprehensive testing suite**
 
-The backend will be ready for frontend integration and provides a solid foundation that can be enhanced with AI capabilities in the future.
+The backend will be ready for frontend integration and provides production-ready AI capabilities with intelligent document processing, vector search, and retrieval-augmented generation.
