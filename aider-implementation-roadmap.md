@@ -258,7 +258,7 @@ curl -X POST http://localhost:8000/api/v1/companies/authenticate \
 Implement document management endpoints for company documents:
 
 POST /api/v1/companies/{company_id}/documents
-- Multipart file upload with validation (PDF, DOCX, XLSX, max 10MB)
+- Multipart file upload with validation (PDF, DOCX max 10MB)
 - Generate unique doc_id, store file securely in uploads/ directory
 - Create database record with PENDING status
 - Return: {"success": true, "data": {"docId": "string", "filename": "string", "status": "PENDING"}}
@@ -365,7 +365,7 @@ class AnswerResult:
 ```
 
 DOCUMENT PROCESSING PIPELINE:
-1. Text extraction from PDF/DOCX/XLSX files (PyPDF2, python-docx, openpyxl)
+1. Text extraction from PDF/DOCX files (PyPDF2, python-docx)
 2. Text chunking with overlap (1000 chars, 200 overlap)
 3. Use DocumentProcessor.index_document() to generate chunk IDs
 4. Store chunks with returned chunk_ids in database

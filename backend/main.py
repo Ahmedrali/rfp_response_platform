@@ -130,6 +130,10 @@ async def health_check():
 # --- Include Routers ---
 app.include_router(auth.router)
 
+# Import and include document routes
+from app.routes import documents
+app.include_router(documents.router)
+
 # --- Application Lifecycle Events (Optional) ---
 @app.on_event("startup")
 async def startup_event():
