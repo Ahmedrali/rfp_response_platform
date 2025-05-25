@@ -7,8 +7,11 @@ from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 
 from app.utils.config import settings
+from app.utils.rate_limiting import limiter, custom_rate_limit_handler
+from app.routes import auth
 
 # --- Structlog Configuration ---
 def configure_logging(log_level: str):
@@ -55,6 +58,10 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     version="0.1.0" # You can make this dynamic if needed
 )
+
+# --- Rate Limiting Setup ---
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
 # --- CORS Middleware ---
 if settings.CORS_ORIGINS:
@@ -119,6 +126,9 @@ async def health_check():
     """
     log.info("Health check endpoint called")
     return {"status": "healthy", "project_name": settings.PROJECT_NAME}
+
+# --- Include Routers ---
+app.include_router(auth.router)
 
 # --- Application Lifecycle Events (Optional) ---
 @app.on_event("startup")
