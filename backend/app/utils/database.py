@@ -1,13 +1,17 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import sessionmaker
+import structlog # Add this import
 
 from app.utils.config import settings
 from app.models.base import Base
+
+log = structlog.get_logger(__name__) # Add this logger instance
 
 async_engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.ECHO_SQL,
     pool_pre_ping=True,
+    connect_args={"server_settings": {"search_path": "public"}} # Ensure public schema is used for asyncpg
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -23,7 +27,8 @@ AsyncSessionLocal = async_sessionmaker(
 async def create_tables():
     """Create all tables in the database (for development only)"""
     async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True) # MODIFIED: Added checkfirst=True
+    log.info("Database tables checked/created successfully (if they didn't exist).")
 
 
 # For getting a session (synchronous style)
