@@ -2,6 +2,10 @@ import logging
 import sys
 import pydantic
 import structlog
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
 
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -133,6 +137,10 @@ app.include_router(auth.router)
 # Import and include document routes
 from app.routes import documents
 app.include_router(documents.router)
+
+# Import and include RFP routes
+from app.routes import rfp
+app.include_router(rfp.router)
 
 # --- Application Lifecycle Events (Optional) ---
 @app.on_event("startup")

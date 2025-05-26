@@ -74,11 +74,18 @@ class DocumentProcessor:
         self.chunk_overlap = 200
 
         # Initialize clients and vector store
-        ## Initialize OpenAI-compatible clients from environment variables.
-        base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-        api_key = os.getenv("OPENAI_API_KEY")
-        embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002")
-        chat_model = os.getenv("CHAT_MODEL", "gpt-3.5-turbo")
+        # Get settings from Celery config if running in worker, otherwise from env
+        try:
+            from app.celery_app import celery_app
+            base_url = celery_app.conf.get("OPENAI_BASE_URL", os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"))
+            api_key = celery_app.conf.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+            embedding_model = celery_app.conf.get("EMBEDDING_MODEL", os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002"))
+            chat_model = celery_app.conf.get("CHAT_MODEL", os.getenv("CHAT_MODEL", "gpt-3.5-turbo"))
+        except ImportError:
+            base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+            api_key = os.getenv("OPENAI_API_KEY")
+            embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002")
+            chat_model = os.getenv("CHAT_MODEL", "gpt-3.5-turbo")
 
         # print(f"Using OpenAI base URL: {base_url}")
         # print(f"Using OpenAI API key: {api_key}")
@@ -88,6 +95,8 @@ class DocumentProcessor:
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
 
+        print(f"Initializing DocumentProcessor with chat model: {chat_model}, base_url: {base_url}")
+        
         self.embeddings_client = FastEmbedEmbeddings(
             model_name=embedding_model,
         )
@@ -95,6 +104,7 @@ class DocumentProcessor:
         self.chat_client = ChatOpenAI(
             model=chat_model,
             base_url=base_url,
+            api_key=api_key,
         )
 
         self.vector_store = self._initialize_vector_store(vector_store_config)
@@ -195,25 +205,44 @@ class DocumentProcessor:
         content = state["content"]
 
         prompt = f"""Extract all questions from the following document content. 
-        Return the questions as a JSON array.
+        You must respond with ONLY valid JSON, no additional text or formatting.
         
         Document content:
         {content}
         
-        Format your response as:
+        Response format (only JSON):
         {{"questions": ["question1", "question2", ...], "confidence": 0.95}}
         
-        If no questions are found, return {{"questions": [], "confidence": 0.0}}
+        If no questions are found, return: {{"questions": [], "confidence": 0.0}}
         """
 
         try:
             response = self.chat_client.invoke(prompt)
-            result = json.loads(response.content)
+            response_text = response.content.strip()
+            
+            # Log the raw response for debugging
+            print(f"AI response for question extraction: {response_text}")
+            
+            # Try to find JSON in the response if it's wrapped with extra text
+            if not response_text.startswith('{'):
+                # Look for JSON pattern in the response
+                import re
+                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if json_match:
+                    response_text = json_match.group()
+                else:
+                    raise ValueError("No JSON found in response")
+            
+            result = json.loads(response_text)
 
             state["questions"] = result.get("questions", [])
             state["confidence_score"] = result.get("confidence", 0.0)
+            
+            print(f"Extracted {len(state['questions'])} questions with confidence {state['confidence_score']}")
+            
         except Exception as e:
             print(f"Error in question extraction: {e}")
+            print(f"Raw response was: {response.content if 'response' in locals() else 'No response'}")
             state["questions"] = []
             state["confidence_score"] = 0.0
 

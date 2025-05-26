@@ -17,9 +17,10 @@ ALLOWED_MIME_TYPES = {
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
     "application/msword",  # .doc
+    "text/plain",  # .txt files for testing
 }
 
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc"}
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 
 # Maximum file size (10MB)
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
@@ -61,7 +62,7 @@ class FileStorage:
                        filename=file.filename)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File type not allowed. Allowed types: PDF, DOCX, DOC"
+                detail=f"File type not allowed. Allowed types: PDF, DOCX, DOC, TXT"
             )
         
         # Check file extension
@@ -226,6 +227,67 @@ class FileStorage:
             "mime_type": mime_type,
             "is_allowed": file_extension in ALLOWED_EXTENSIONS
         }
+    
+    def extract_text(self, file_path: str) -> str:
+        """
+        Extract text from a document file.
+        
+        Args:
+            file_path: Path to the file
+            
+        Returns:
+            Extracted text content
+            
+        Raises:
+            ValueError: If file type is not supported or extraction fails
+        """
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise ValueError(f"File not found: {file_path}")
+        
+        file_extension = file_path.suffix.lower()
+        
+        if file_extension == '.pdf':
+            return self._extract_text_from_pdf(str(file_path))
+        elif file_extension in ['.docx', '.doc']:
+            return self._extract_text_from_docx(str(file_path))
+        elif file_extension == '.txt':
+            return self._extract_text_from_txt(str(file_path))
+        else:
+            raise ValueError(f"Unsupported file type for text extraction: {file_extension}")
+    
+    def _extract_text_from_pdf(self, file_path: str) -> str:
+        """Extract text from PDF file"""
+        try:
+            import PyPDF2
+            text = ""
+            with open(file_path, 'rb') as file:
+                reader = PyPDF2.PdfReader(file)
+                for page in reader.pages:
+                    text += page.extract_text() + "\n\n"
+            return text
+        except Exception as e:
+            log.error("PDF text extraction failed", error=str(e), file_path=file_path)
+            raise ValueError(f"Failed to extract text from PDF: {str(e)}")
+    
+    def _extract_text_from_docx(self, file_path: str) -> str:
+        """Extract text from DOCX file"""
+        try:
+            import docx
+            doc = docx.Document(file_path)
+            return "\n\n".join([paragraph.text for paragraph in doc.paragraphs])
+        except Exception as e:
+            log.error("DOCX text extraction failed", error=str(e), file_path=file_path)
+            raise ValueError(f"Failed to extract text from DOCX: {str(e)}")
+    
+    def _extract_text_from_txt(self, file_path: str) -> str:
+        """Extract text from TXT file"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        except Exception as e:
+            log.error("TXT text extraction failed", error=str(e), file_path=file_path)
+            raise ValueError(f"Failed to extract text from TXT: {str(e)}")
 
 
 # Global file storage instance

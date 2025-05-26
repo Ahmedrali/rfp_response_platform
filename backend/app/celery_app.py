@@ -2,7 +2,13 @@
 Celery application configuration for background task processing
 """
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from celery import Celery
+
+# Load environment variables first
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+
 from app.utils.config import settings
 
 # Create Celery app instance
@@ -12,14 +18,23 @@ celery_app = Celery(
     backend=settings.REDIS_URL,
     include=[
         "app.tasks.document_tasks",
+        "app.tasks.rfp_tasks",
     ]
 )
 
-# Configure Celery
+# Make environment variables available to workers through config
 celery_app.conf.update(
+    # OpenAI and RAG settings
+    OPENAI_API_KEY=os.getenv("OPENAI_API_KEY"),
+    OPENAI_BASE_URL=os.getenv("OPENAI_BASE_URL"),
+    CHAT_MODEL=os.getenv("CHAT_MODEL"),
+    EMBEDDING_MODEL=os.getenv("EMBEDDING_MODEL"),
+
+    # Celery configuration
     # Task routing
     task_routes={
         "app.tasks.document_tasks.*": {"queue": "document_processing"},
+        "app.tasks.rfp_tasks.*": {"queue": "document_processing"},
     },
     
     # Task configuration

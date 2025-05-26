@@ -41,3 +41,8 @@ settings = Settings()
 
 # Configure root logger based on LOG_LEVEL from settings
 logging.basicConfig(level=settings.LOG_LEVEL.upper())
+
+
+def get_database_url() -> str:
+    """Get the database URL from settings."""
+    return settings.DATABASE_URL

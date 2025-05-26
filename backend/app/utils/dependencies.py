@@ -93,3 +93,32 @@ async def get_current_company(
 
 # Typed dependency for easier usage
 CurrentCompany = Annotated[Company, Depends(get_current_company)]
+
+
+async def verify_company_access(
+    company_id: str,
+    current_company: Company = Depends(get_current_company)
+) -> bool:
+    """
+    Verify that the authenticated company matches the requested company_id.
+    
+    Args:
+        company_id: The company ID from the URL path
+        current_company: The authenticated company
+        
+    Returns:
+        True if access is granted
+        
+    Raises:
+        HTTPException: If company doesn't match or access is denied
+    """
+    if str(current_company.id) != company_id:
+        log.warning("Company access denied", 
+                   authenticated_company=str(current_company.id),
+                   requested_company=company_id)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Company mismatch"
+        )
+    
+    return True
