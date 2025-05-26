@@ -68,15 +68,14 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
 # --- CORS Middleware ---
-if settings.CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin).strip() for origin in settings.CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    log.info("CORS middleware enabled", origins=settings.CORS_ORIGINS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for testing
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+log.info("CORS middleware enabled", origins=["*"])
 
 # --- Exception Handlers ---
 @app.exception_handler(RequestValidationError)

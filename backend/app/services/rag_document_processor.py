@@ -77,15 +77,15 @@ class DocumentProcessor:
         # Get settings from Celery config if running in worker, otherwise from env
         try:
             from app.celery_app import celery_app
-            base_url = celery_app.conf.get("OPENAI_BASE_URL", os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"))
+            base_url = celery_app.conf.get("OPENAI_BASE_URL", os.getenv("OPENAI_BASE_URL", "https://optogpt.optomatica.com/api"))
             api_key = celery_app.conf.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
-            embedding_model = celery_app.conf.get("EMBEDDING_MODEL", os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002"))
-            chat_model = celery_app.conf.get("CHAT_MODEL", os.getenv("CHAT_MODEL", "gpt-3.5-turbo"))
+            embedding_model = celery_app.conf.get("EMBEDDING_MODEL", os.getenv("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5"))
+            chat_model = celery_app.conf.get("CHAT_MODEL", os.getenv("CHAT_MODEL", "google_genai.gemini-2.5-flash-preview-05-20"))
         except ImportError:
-            base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+            base_url = os.getenv("OPENAI_BASE_URL", "https://optogpt.optomatica.com/api")
             api_key = os.getenv("OPENAI_API_KEY")
-            embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002")
-            chat_model = os.getenv("CHAT_MODEL", "gpt-3.5-turbo")
+            embedding_model = os.getenv("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
+            chat_model = os.getenv("CHAT_MODEL", "google_genai.gemini-2.5-flash-preview-05-20")
 
         # print(f"Using OpenAI base URL: {base_url}")
         # print(f"Using OpenAI API key: {api_key}")

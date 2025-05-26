@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # CORS settings
-    CORS_ORIGINS: Union[str, List[str]] = ["http://localhost:3000", "http://localhost:8080"] # Comma-separated string or list
+    CORS_ORIGINS: Union[str, List[str]] = ["http://localhost:3000", "http://localhost:8080", "file://"] # Comma-separated string or list
 
     # Logging settings
     LOG_LEVEL: str = "INFO" # DEBUG, INFO, WARNING, ERROR, CRITICAL

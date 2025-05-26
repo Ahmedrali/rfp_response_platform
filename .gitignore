@@ -8,6 +8,7 @@ build/
 develop-eggs/
 dist/
 downloads/
+test_docs/
 eggs/
 .eggs/
 lib/
