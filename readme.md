@@ -442,3 +442,10 @@ For technical issues:
 - ⏳ Testing suite (to be implemented with Aider)
 
 Ready for Aider implementation! 🚀
+ScreenShots:
+<img width="1356" alt="Screenshot 2025-05-26 at 11 36 11 AM" src="https://github.com/user-attachments/assets/b2c151e3-f99b-4e5a-836c-407a87fcfd1a" />
+<img width="1356" alt="Screenshot 2025-05-26 at 11 36 22 AM" src="https://github.com/user-attachments/assets/b137fcb5-a81c-4a71-89e8-cd6f8b799993" />
+<img width="1356" alt="Screenshot 2025-05-26 at 11 36 32 AM" src="https://github.com/user-attachments/assets/cac588ca-3bbb-4954-96c9-c94cd499db9a" />
+<img width="1356" alt="Screenshot 2025-05-26 at 11 36 47 AM" src="https://github.com/user-attachments/assets/ea855691-6f65-4d2e-b68d-5aea117af66c" />
+<img width="1356" alt="Screenshot 2025-05-26 at 11 36 58 AM" src="https://github.com/user-attachments/assets/876be02b-df53-4e75-9546-123ce52cf277" />
+<img width="1356" alt="Screenshot 2025-05-26 at 11 39 59 AM" src="https://github.com/user-attachments/assets/cf7760e2-2b11-4b4d-b51c-a0d9b634f20a" />
